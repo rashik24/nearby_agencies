@@ -9,27 +9,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          pip install pandas numpy
+      - name: Install packages
+        run: pip install pandas numpy
 
-      - name: Run distance script
-        run: |
-          python compute_distances.py
+      - name: Generate distances
+        run: python compute_distances.py
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: distance-file
-          path: agency_distances.csv
       - name: Commit distance file
         run: |
           git config --global user.name "github-actions"

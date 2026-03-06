@@ -10,7 +10,7 @@ import os
 @st.cache_data
 def load_hours():
     return pd.read_csv("fbcenc_hourly.csv")
-
+st.write(pd.read_csv("agency_distances.csv").head())
 @st.cache_data
 def load_distances():
     df = pd.read_csv("agency_distances.csv")

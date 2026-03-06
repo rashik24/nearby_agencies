@@ -10,7 +10,7 @@ from distance_utils import build_tree, find_nearby
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv("fbcenc_hours.csv")
+    df = pd.read_csv("fbcenc_hourly.csv")
     return df
 
 df = load_data()

@@ -17,9 +17,9 @@ def find_nearby(tree, df, agency_name, radius_miles=10):
 
     idx = df[df["Agency"] == agency_name].index[0]
 
-    point = np.radians(
-        df.loc[idx, ["Latitude", "Longitude"]].values.reshape(1, -1)
-    )
+    point = df.loc[idx, ["Latitude", "Longitude"]].astype(float).to_numpy().reshape(1, -1)
+
+    point = np.radians(point)
 
     radius = radius_miles / earth_radius
 

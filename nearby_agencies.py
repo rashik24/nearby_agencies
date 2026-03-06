@@ -20,7 +20,7 @@ df = load_data()
 # Unique agencies
 # ----------------------------
 
-ag = df[["Agency","Latitude","Longitude"]].drop_duplicates()
+ag = df[["Agency","Latitude","Longitude"]].drop_duplicates().reset_index(drop=True)
 
 ag["Latitude"] = ag["Latitude"].astype(float)
 ag["Longitude"] = ag["Longitude"].astype(float)

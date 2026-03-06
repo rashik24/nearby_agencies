@@ -1,106 +1,100 @@
-from datetime import datetime
-
-def get_open_agencies(df):
-
-    now=datetime.now()
-
-    week=(now.day-1)//7 + 1
-    day=now.strftime("%A")
-    hour=now.hour
-
-    open_now=df[
-        (df["Week"]==week) &
-        (df["Day"]==day) &
-        (df["Hour"]==hour)
-    ]
-
-    return open_now
-import pandas as pd
-import numpy as np
-from math import radians, sin, cos, sqrt, atan2
-
-df = pd.read_csv("/Users/rsiddiq2/Downloads/llama-index/fbcenc_hourly.csv")
-
-# keep unique agency locations
-agencies = df[["Agency","Latitude","Longitude"]].drop_duplicates()
-
-from datetime import datetime
-
-def get_open_agencies(df):
-
-    now=datetime.now()
-
-    week=(now.day-1)//7 + 1
-    day=now.strftime("%A")
-    hour=now.hour
-
-    open_now=df[
-        (df["Week"]==week) &
-        (df["Day"]==day) &
-        (df["Hour"]==hour)
-    ]
-
-    return open_now
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from distance_utils import build_tree, find_nearby
 
-df = pd.read_csv("/Users/rsiddiq2/Downloads/llama-index/fbcenc_hourly.csv")
-distances=pd.read_csv("agency_distances.csv")
+
+# ----------------------------
+# Load dataset (cached)
+# ----------------------------
+
+@st.cache_data
+def load_data():
+    df = pd.read_csv("fbcenc_hours.csv")
+    return df
+
+df = load_data()
+
+
+# ----------------------------
+# Unique agencies
+# ----------------------------
+
+ag = df[["Agency","Latitude","Longitude"]].drop_duplicates()
+
+ag["Latitude"] = ag["Latitude"].astype(float)
+ag["Longitude"] = ag["Longitude"].astype(float)
+
+ag = ag.dropna(subset=["Latitude","Longitude"])
+
+
+# ----------------------------
+# Build spatial index (cached)
+# ----------------------------
+
+@st.cache_resource
+def get_tree(data):
+    return build_tree(data)
+
+tree = get_tree(ag)
+
+
+# ----------------------------
+# UI
+# ----------------------------
 
 st.title("Food Pantry Finder")
 
-agency_selected=st.selectbox(
+agency_selected = st.selectbox(
     "Select Agency",
-    df["Agency"].unique()
+    sorted(ag["Agency"].unique())
 )
 
-max_distance=st.slider(
-    "Max Distance (km)",
+radius = st.slider(
+    "Search radius (miles)",
     1,
     50,
     10
 )
 
-# ---------------------
-# get open agencies
-# ---------------------
 
-now=datetime.now()
-week=(now.day-1)//7 + 1
-day=now.strftime("%A")
-hour=now.hour
+# ----------------------------
+# Find nearby agencies
+# ----------------------------
 
-open_now=df[
-    (df["Week"]==week) &
-    (df["Day"]==day) &
-    (df["Hour"]==hour)
+nearby = find_nearby(tree, ag, agency_selected, radius)
+
+
+# ----------------------------
+# Find agencies open now
+# ----------------------------
+
+now = datetime.now()
+
+week = (now.day - 1)//7 + 1
+day = now.strftime("%A")
+hour = now.hour
+
+open_now = df[
+    (df["Week"] == week) &
+    (df["Day"] == day) &
+    (df["Hour"] == hour)
 ]
 
-open_agencies=open_now["Agency"].unique()
 
-# ---------------------
-# distance filter
-# ---------------------
+# ----------------------------
+# Filter nearby agencies by open status
+# ----------------------------
 
-nearby=distances[
-    (distances["agency_1"]==agency_selected) &
-    (distances["distance_km"]<=max_distance)
-]
+nearby = nearby[nearby["Agency"].isin(open_now["Agency"])]
 
-nearby=nearby[nearby["agency_2"].isin(open_agencies)]
 
-nearby=nearby.merge(
-    df[["Agency","Latitude","Longitude"]].drop_duplicates(),
-    left_on="agency_2",
-    right_on="Agency"
-)
+# ----------------------------
+# Display results
+# ----------------------------
 
-st.write("Open Nearby Agencies")
+st.subheader("Nearby Agencies Open Now")
 
-st.dataframe(
-    nearby[["Agency","distance_km","Latitude","Longitude"]]
-)
+st.dataframe(nearby)
 
 st.map(nearby[["Latitude","Longitude"]])

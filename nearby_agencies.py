@@ -76,6 +76,7 @@ nearby = nearby.merge(
     on="Agency",
     how="left"
 )
+nearby = nearby.sort_values("distance_miles")
 # remove the selected agency if it exists in file
 nearby = nearby[nearby["Agency"] != agency_selected]
 

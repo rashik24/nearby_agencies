@@ -64,6 +64,11 @@ radius = st.slider(
 
 nearby = find_nearby(tree, ag, agency_selected, radius)
 
+st.write("Nearby Agencies")
+
+st.dataframe(
+    nearby[["Agency","distance_miles"]]
+)
 
 # ----------------------------
 # Find agencies open now
@@ -97,4 +102,3 @@ st.subheader("Nearby Agencies Open Now")
 
 st.dataframe(nearby)
 
-st.map(nearby[["Latitude","Longitude"]])

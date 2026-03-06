@@ -36,7 +36,7 @@ ag = ag.dropna(subset=["Latitude","Longitude"])
 def get_tree(data):
     return build_tree(data)
 
-tree = get_tree(ag)
+tree, coords_rad = build_tree(ag)
 
 
 # ----------------------------
@@ -62,7 +62,7 @@ radius = st.slider(
 # Find nearby agencies
 # ----------------------------
 
-nearby = find_nearby(tree, ag, agency_selected, radius)
+nearby = find_nearby(tree, coords_rad, ag, agency_selected, radius)
 
 st.write("Nearby Agencies")
 

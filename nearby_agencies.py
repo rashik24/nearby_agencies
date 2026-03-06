@@ -17,7 +17,7 @@ def load_distances():
 
 df = load_hours()
 distances = load_distances()
-
+st.write(distances.columns)
 # ----------------------------
 # Unique agencies
 # ----------------------------

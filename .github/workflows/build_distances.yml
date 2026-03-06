@@ -30,3 +30,10 @@ jobs:
         with:
           name: distance-file
           path: agency_distances.csv
+      - name: Commit distance file
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add agency_distances.csv
+          git commit -m "Update distance matrix"
+          git push

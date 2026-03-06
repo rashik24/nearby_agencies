@@ -1,10 +1,13 @@
 import numpy as np
 from sklearn.neighbors import BallTree
 
+EARTH_RADIUS_MILES = 3958.8
+
 
 def build_tree(df):
 
-    coords = np.radians(df[["Latitude", "Longitude"]].values)
+    coords = df[["Latitude","Longitude"]].astype(float).to_numpy()
+    coords = np.radians(coords)
 
     tree = BallTree(coords, metric="haversine")
 
@@ -13,18 +16,22 @@ def build_tree(df):
 
 def find_nearby(tree, df, agency_name, radius_miles=10):
 
-    earth_radius = 3958.8
+    coords = df[["Latitude","Longitude"]].astype(float).to_numpy()
+    coords_rad = np.radians(coords)
 
     idx = df[df["Agency"] == agency_name].index[0]
 
-    point = df.loc[idx, ["Latitude", "Longitude"]].astype(float).to_numpy().reshape(1, -1)
+    point = coords_rad[idx].reshape(1,-1)
 
-    point = np.radians(point)
+    radius = radius_miles / EARTH_RADIUS_MILES
 
-    radius = radius_miles / earth_radius
+    dist, ind = tree.query_radius(point, r=radius, return_distance=True)
 
-    ind = tree.query_radius(point, r=radius)[0]
+    ind = ind[0]
+    dist = dist[0] * EARTH_RADIUS_MILES
 
     nearby = df.iloc[ind].copy()
 
-    return nearby
+    nearby["distance_miles"] = dist
+
+    return nearby.sort_values("distance_miles")

@@ -64,9 +64,11 @@ nearby = distances[
 ].copy()
 
 nearby["distance_miles"] = nearby["distance_miles"].round(2)
+
 nearby = (
     nearby.groupby("agency_2", as_index=False)
     .agg({"distance_miles": "min"})
+    .rename(columns={"agency_2": "Agency"})
 )
 # join coordinates if you need them later
 nearby = nearby.merge(

@@ -73,11 +73,9 @@ nearby = (
 # join coordinates if you need them later
 nearby = nearby.merge(
     ag,
-    left_on="agency_2",
-    right_on="Agency",
+    on="Agency",
     how="left"
 )
-
 # remove the selected agency if it exists in file
 nearby = nearby[nearby["Agency"] != agency_selected]
 

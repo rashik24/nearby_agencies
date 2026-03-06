@@ -1,55 +1,32 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from distance_utils import build_tree, find_nearby
-
 import os
-import requests
 
-DIST_FILE = "agency_distances.csv"
-
-if not os.path.exists(DIST_FILE):
-
-    url = "https://github.com/YOUR_REPO/actions/artifacts/FILE_ID/download"
-
-    r = requests.get(url)
-
-    with open(DIST_FILE, "wb") as f:
-        f.write(r.content)
 # ----------------------------
-# Load dataset (cached)
+# Load data
 # ----------------------------
 
 @st.cache_data
-def load_data():
-    df = pd.read_csv("fbcenc_hourly.csv")
-    return df
+def load_hours():
+    return pd.read_csv("fbcenc_hourly.csv")
 
-df = load_data()
+@st.cache_data
+def load_distances():
+    return pd.read_csv("agency_distances.csv")
 
+df = load_hours()
+distances = load_distances()
 
 # ----------------------------
 # Unique agencies
 # ----------------------------
 
-ag = df[["Agency","Latitude","Longitude"]].drop_duplicates().reset_index(drop=True)
+ag = df[["Agency", "Latitude", "Longitude"]].drop_duplicates().reset_index(drop=True)
 
-ag["Latitude"] = ag["Latitude"].astype(float)
-ag["Longitude"] = ag["Longitude"].astype(float)
-
-ag = ag.dropna(subset=["Latitude","Longitude"])
-
-
-# ----------------------------
-# Build spatial index (cached)
-# ----------------------------
-
-@st.cache_resource
-def get_tree(data):
-    return build_tree(data)
-
-tree, coords_rad = build_tree(ag)
-
+ag["Latitude"] = pd.to_numeric(ag["Latitude"], errors="coerce")
+ag["Longitude"] = pd.to_numeric(ag["Longitude"], errors="coerce")
+ag = ag.dropna(subset=["Latitude", "Longitude"])
 
 # ----------------------------
 # UI
@@ -69,26 +46,36 @@ radius = st.slider(
     10
 )
 
+show_only_open = st.checkbox("Show only agencies open now", value=True)
 
 # ----------------------------
-# Find nearby agencies
+# Filter nearby agencies from precomputed distances
 # ----------------------------
 
-nearby = find_nearby(tree, coords_rad, ag, agency_selected, radius)
+nearby = distances[
+    (distances["agency_1"] == agency_selected) &
+    (distances["distance_miles"] <= radius)
+].copy()
 
-st.write("Nearby Agencies")
+nearby["distance_miles"] = nearby["distance_miles"].round(2)
 
-st.dataframe(
-    nearby[["Agency","distance_miles"]]
+# join coordinates if you need them later
+nearby = nearby.merge(
+    ag,
+    left_on="agency_2",
+    right_on="Agency",
+    how="left"
 )
+
+# remove the selected agency if it exists in file
+nearby = nearby[nearby["Agency"] != agency_selected]
 
 # ----------------------------
 # Find agencies open now
 # ----------------------------
 
 now = datetime.now()
-
-week = (now.day - 1)//7 + 1
+week = (now.day - 1) // 7 + 1
 day = now.strftime("%A")
 hour = now.hour
 
@@ -98,19 +85,16 @@ open_now = df[
     (df["Hour"] == hour)
 ]
 
-
-# ----------------------------
-# Filter nearby agencies by open status
-# ----------------------------
-
-nearby = nearby[nearby["Agency"].isin(open_now["Agency"])]
-
+if show_only_open:
+    nearby = nearby[nearby["Agency"].isin(open_now["Agency"])]
 
 # ----------------------------
 # Display results
 # ----------------------------
 
-st.subheader("Nearby Agencies Open Now")
+st.subheader("Nearby Agencies")
 
-st.dataframe(nearby)
-
+st.dataframe(
+    nearby[["Agency", "distance_miles"]]
+    .rename(columns={"Agency": "Nearby Agency"})
+)

@@ -3,7 +3,19 @@ import pandas as pd
 from datetime import datetime
 from distance_utils import build_tree, find_nearby
 
+import os
+import requests
 
+DIST_FILE = "agency_distances.csv"
+
+if not os.path.exists(DIST_FILE):
+
+    url = "https://github.com/YOUR_REPO/actions/artifacts/FILE_ID/download"
+
+    r = requests.get(url)
+
+    with open(DIST_FILE, "wb") as f:
+        f.write(r.content)
 # ----------------------------
 # Load dataset (cached)
 # ----------------------------

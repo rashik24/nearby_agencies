@@ -13,11 +13,17 @@ def load_hours():
 
 @st.cache_data
 def load_distances():
-    return pd.read_csv("agency_distances.csv")
+    df = pd.read_csv("agency_distances.csv")
+
+    # If columns are unnamed (0,1,2) fix them
+    if list(df.columns) != ["agency_1", "agency_2", "distance_miles"]:
+        df.columns = ["agency_1", "agency_2", "distance_miles"]
+
+    return df
+
 
 df = load_hours()
 distances = load_distances()
-st.write(distances.columns)
 # ----------------------------
 # Unique agencies
 # ----------------------------

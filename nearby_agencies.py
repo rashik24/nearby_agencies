@@ -10,7 +10,7 @@ import os
 @st.cache_data
 def load_hours():
     return pd.read_csv("fbcenc_hourly.csv")
-st.write(pd.read_csv("agency_distances.csv").head())
+
 @st.cache_data
 def load_distances():
     df = pd.read_csv("agency_distances.csv")
@@ -64,7 +64,10 @@ nearby = distances[
 ].copy()
 
 nearby["distance_miles"] = nearby["distance_miles"].round(2)
-
+nearby = (
+    nearby.groupby("agency_2", as_index=False)
+    .agg({"distance_miles": "min"})
+)
 # join coordinates if you need them later
 nearby = nearby.merge(
     ag,
